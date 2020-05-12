@@ -189,6 +189,13 @@ class Backup:
 			with Lock(bck.dest):
 				for profile, value in profiles:
 					self.status_queue.put('add_item')
+
+					snaps = bck.ceph.snap(bck.rbd)
+					if not self.args.force and len(snaps) > len(profiles) * 3:
+						Log.debug(f'{bck} has {len(snaps)} snaps. There is probably another backup enqueued, skipping.')
+						self.status_queue.put('done_item')
+						continue
+
 					if not self.args.force and not bck.check_profile(profile):
 						self.status_queue.put('done_item')
 						continue
